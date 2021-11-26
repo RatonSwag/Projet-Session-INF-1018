@@ -24,9 +24,7 @@ public class FileExplorer {
 		List<Path> result = null;
 		
 		try(Stream<Path> walk = Files.walk(explorerPath)){
-			result = walk.filter(Files::isRegularFile)
-					.filter(p -> p.getFileName().toString().endsWith(".java"))
-					.collect(Collectors.toList());
+			result = walk.filter(Files::isRegularFile).filter(p -> p.getFileName().toString().endsWith(".java")).collect(Collectors.toList());
 		}
 		catch(Exception e) {}
 		return result;

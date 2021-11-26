@@ -48,11 +48,16 @@ options
 
 PARSER_BEGIN(JavaParser)
 import java.io.*;
-import logicProjet.FileExplorer;
+import logicProjet.*;
 
 public class JavaParser
 {
   private InputStream inputStream = null;
+  
+  //Test
+  private boolean variable=false;
+  private ModifiersCounter md=new ModifiersCounter() ;
+  //
 
   /**
      * Constructor for JavaParser.
@@ -96,10 +101,10 @@ public class JavaParser
   // for f in /some/directory/full/of/java/files/*.java; do java -cp . JavaParser $f; done
   public static void main(String args [])
   {
-    FileExplorer ex = new FileExplorer();
-    ex.ExploreFiles();
+    //FileExplorer ex = new FileExplorer();
+    //ex.ExploreFiles();
     
-	System.out.println("zzzzzzz");
+	ModifiersCounter modCtr = new ModifiersCounter();
     JavaParser parser;
     if (args.length == 0) {
       System.out.println("Java Parser Version 1.7:  Reading from standard input...");
@@ -555,12 +560,18 @@ void Modifiers() :
     LOOKAHEAD(2)
     (
       < PUBLIC >
+      {
+        //Set le dernier modificateur comme étant public
+        md.SetModifierType(0);
+      }
     | 
       < STATIC >
     | 
       < PROTECTED >
+      { md.SetModifierType(2);}
     | 
       < PRIVATE >
+      { md.SetModifierType(1);}
     | 
       < FINAL >
     | 
@@ -745,6 +756,7 @@ void ClassOrInterfaceBodyDeclaration() :
   | 
     Modifiers() // Just get all the modifiers out of the way. If you want to do
     // more checks, pass the modifiers down to the member
+    { System.out.println("lul");}
     (
       LOOKAHEAD(3)
       ClassOrInterfaceDeclaration()
@@ -766,15 +778,20 @@ void ClassOrInterfaceBodyDeclaration() :
     )
   | 
     ";"
-  )
+  ) { System.out.println("zz");}
 }
 
 void FieldDeclaration() :
 {
+  //token t;
 }
 {
   (
     // Modifiers are already matched in the caller
+    { variable=true;
+    //Modifiers();
+    md.AddModifier();
+    md.ToString();}
     Type() VariableDeclarator()
     (
       "," VariableDeclarator()
