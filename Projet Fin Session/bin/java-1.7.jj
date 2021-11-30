@@ -58,6 +58,11 @@ public class JavaParser
   private boolean variable=false;
   private ModifiersCounter md=new ModifiersCounter() ;
   //
+  //Analyse de la visibilité entre classes d’un programme
+  private Visibility cl=new Visibility();
+  private boolean attribut=false;
+  private boolean getid=false;
+  //
 
   /**
      * Constructor for JavaParser.
@@ -525,7 +530,7 @@ void CompilationUnit() :
     (
       TypeDeclaration()
     )*
-    < EOF >
+    < EOF > {/*Analyse reference*/ System.out.println(cl.toString());} 
   )
 }
 
@@ -942,14 +947,18 @@ void Initializer() :
 
 void Type() :
 {
+  if (attribut=true) { getid=true; } 
 }
 {
   (
     LOOKAHEAD(2)
-    ReferenceType()
-  | 
-    PrimitiveType()
+    //Analyse increment reference number
+    ReferenceType() {if (attribut=true) { cl.augmentReference(); } }
+  |
+  	//Analyse increment reference number
+    PrimitiveType() {if (attribut=true) {cl.augmentTypesimple(); } }
   )
+  {attribut=false;getid=false;}
 }
 
 void ReferenceType() :
@@ -976,10 +985,13 @@ void ReferenceType() :
 
 void ClassOrInterfaceType() :
 {
+  Token t;
 }
 {
   (
-    < IDENTIFIER >
+    t= < IDENTIFIER >
+    {String a=t.toString();
+      if(getid==true) { cl.ajouterClassRef(a); getid=false;} }
     [
       LOOKAHEAD(2)
       TypeArguments()
