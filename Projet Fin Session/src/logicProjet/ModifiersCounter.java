@@ -8,6 +8,7 @@ public class ModifiersCounter {
 	private int modifierType;
 	
 	private boolean isVariable;
+	private String nameOfClass;
 	
 	
 	public ModifiersCounter() {
@@ -19,6 +20,10 @@ public class ModifiersCounter {
 	
 	public void SetModifierType(int i) {
 		this.modifierType = i;
+	}
+	
+	public void SetName(String nom) {
+		this.nameOfClass = nom;
 	}
 	
 	public void AddModifier() {
@@ -62,12 +67,18 @@ public class ModifiersCounter {
 	}
 	
 	public void ToString() {
-		int total = this.nbrPublic + this.nbrPrivate + this.nbrProtected;
 		
-		double percentPublic = (double) this.nbrPublic / (double) total;
+		System.out.println(this.nameOfClass + ": ");
+		int total = this.nbrPublic + this.nbrPrivate + this.nbrProtected;
+		if(total != 0) {
+			double percentPublic = (double) this.nbrPublic / (double) total;
 		
 		System.out.println("Public: " + (((double) this.nbrPublic / (double) total) * 100) + "%");
 		System.out.println("Private: " + (((double) this.nbrPrivate / (double) total) * 100) + "%");
 		System.out.println("Protected: " + (((double) this.nbrProtected / (double) total) * 100) + "%");
+		}
+		else {
+			System.out.println("Aucune variable déclaré avec les modifieurs recherchés");
+		}
 	}
 }

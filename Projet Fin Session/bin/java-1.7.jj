@@ -49,15 +49,21 @@ options
 PARSER_BEGIN(JavaParser)
 import java.io.*;
 import logicProjet.*;
+import java.util.Stack;
 
 public class JavaParser
 {
   private InputStream inputStream = null;
+
+  //Déclaration stacks
+  private Stack < ModifiersCounter > modCtrStack = new Stack < ModifiersCounter > ();
+  private Stack < CouplingCounter > ccStack = new Stack < CouplingCounter > ();
   
   //Test
   private boolean variable=false;
   private ModifiersCounter md=new ModifiersCounter() ;
-  //
+  //Test
+  
   //Analyse de la visibilité entre classes d’un programme
   private Visibility cl=new Visibility();
   private boolean attribut=false;
@@ -565,18 +571,36 @@ void Modifiers() :
     LOOKAHEAD(2)
     (
       < PUBLIC >
+      //Modification Modifier Counter
+      //Set le dernier modificateur comme étant public
       {
-        //Set le dernier modificateur comme étant public
-        md.SetModifierType(0);
+        if (!modCtrStack.empty())
+        {
+          modCtrStack.peek().SetModifierType(0);
+        }
       }
     | 
       < STATIC >
     | 
       < PROTECTED >
-      { md.SetModifierType(2);}
+      //Modification Modifier Counter
+      //Set le dernier modificateur comme étant Protected
+      {
+        if (!modCtrStack.empty())
+        {
+          modCtrStack.peek().SetModifierType(2);
+        }
+      }
     | 
       < PRIVATE >
-      { md.SetModifierType(1);}
+      //Modification Modifier Counter
+      //Set le dernier modificateur comme étant Private
+      {
+        if (!modCtrStack.empty())
+        {
+          modCtrStack.peek().SetModifierType(1);
+        }
+      }
     | 
       < FINAL >
     | 
@@ -621,17 +645,32 @@ void TypeDeclaration() :
 
 void ClassOrInterfaceDeclaration() :
 {
+  Token className;
 }
 {
+  //Modification Modifier Counter
+  //Modification Coupling Counter
+  {
+    modCtrStack.push(new ModifiersCounter());
+    ccStack.push(new CouplingCounter());
+  }
   (
     "class"
   | "interface"
   )
-  < IDENTIFIER > 
+  //Modification Modifier Counter
+  className = < IDENTIFIER >
+  {
+    modCtrStack.peek().SetName(className.toString());
+  }
   [ TypeParameters() ] 
   [ ExtendsList() ] 
   [ ImplementsList() ] 
   ClassOrInterfaceBody()
+  //Modification Coupling Counter
+  {
+    ccStack.pop().printCalled();
+  }
   /* danson, added this check for trailing semi-colon.  Apparently, this has been
       legal since the beginning of Java, some sort of a C hold-over.  Sun's latest
       Java 1.5 compiler doesn't mind it, but this parser whined if the class has a
@@ -749,6 +788,10 @@ void ClassOrInterfaceBody() :
     )*
     "}"
   )
+  //Modification ModifiersCounter
+  {
+    modCtrStack.pop().ToString();
+  }
 }
 
 void ClassOrInterfaceBodyDeclaration() :
@@ -761,7 +804,7 @@ void ClassOrInterfaceBodyDeclaration() :
   | 
     Modifiers() // Just get all the modifiers out of the way. If you want to do
     // more checks, pass the modifiers down to the member
-    { System.out.println("lul");}
+    //{ System.out.println("lul");}
     (
       LOOKAHEAD(3)
       ClassOrInterfaceDeclaration()
@@ -783,20 +826,22 @@ void ClassOrInterfaceBodyDeclaration() :
     )
   | 
     ";"
-  ) { System.out.println("zz");}
+  ) //{ System.out.println("zz");}
 }
 
 void FieldDeclaration() :
 {
-  //token t;
 }
 {
   (
     // Modifiers are already matched in the caller
-    { variable=true;
-    //Modifiers();
-    md.AddModifier();
-    md.ToString();}
+    
+	//Modification Modifiers Counter
+    //Modification Coupling Counter
+    {
+      modCtrStack.peek().AddModifier();
+      ccStack.peek().Call();
+    }
     Type() VariableDeclarator()
     (
       "," VariableDeclarator()
@@ -811,14 +856,24 @@ void VariableDeclarator() :
 {
   (
     VariableDeclaratorId() [ "=" VariableInitializer() ]
+    //Modification CouplingCounter
+    {
+      ccStack.peek().AssignNameToClass();
+      ccStack.peek().Uncall();
+    }
   )
 }
 
 void VariableDeclaratorId() :
 {
+  Token variableName;
 }
 {
-  < IDENTIFIER > 
+  //Modification CouplingCounter
+  variableName = < IDENTIFIER >
+  {
+    ccStack.peek().SetLastName(variableName.toString());
+  }  
   (
   "[" "]"
   )*
@@ -992,6 +1047,10 @@ void ClassOrInterfaceType() :
     t= < IDENTIFIER >
     {String a=t.toString();
       if(getid==true) { cl.ajouterClassRef(a); getid=false;} }
+      //Modification CouplingCounter
+    {
+      ccStack.peek().SetLastClass(t.toString());
+    }
     [
       LOOKAHEAD(2)
       TypeArguments()
@@ -1087,9 +1146,16 @@ void Name() :
  * by a ".*" when used in the context of an "ImportDeclaration".
  */
 {
+  Token calledName;
 }
 {
-  < IDENTIFIER >
+  //Modification Coupling Counter
+  calledName = < IDENTIFIER >
+  {
+    if(ccStack.size() > 0) {
+      ccStack.peek().AddCalled(calledName.toString());
+    }
+  }
   (
     LOOKAHEAD(2)
     "." < IDENTIFIER >
@@ -1390,6 +1456,10 @@ void PrimaryExpression() :
 {
 }
 {
+  //Modification CouplingCounter
+  {
+    ccStack.peek().Call();
+  }
   PrimaryPrefix()
   (
     LOOKAHEAD(2)
