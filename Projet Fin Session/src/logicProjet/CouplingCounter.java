@@ -23,7 +23,7 @@ public class CouplingCounter {
 	}
 
 	public void SetLastClass(String last) {
-		if(this.called) {
+		if (this.called) {
 			this.lastClass = last;
 			this.called = false;
 		}
@@ -44,26 +44,33 @@ public class CouplingCounter {
 	public void AddCalled() {
 		this.calledClasses.add(this.lastClass);
 	}
-	
+
 	public void AddCalled(String name) {
-		if(assignedNames.containsKey(name)) {
+		if (assignedNames.containsKey(name)) {
 			this.calledClasses.add(assignedNames.get(name));
 		}
 	}
 
 	public void printCalled() {
-		ArrayList<String> distinctCalled = new ArrayList<String>();
+		System.out.println("\nClasses appelées: ");
+		if (calledClasses.size() != 0) {
+			ArrayList<String> distinctCalled = new ArrayList<String>();
 
-		// Remplis la liste distincte d'éléments distincts
-		for (String k : this.calledClasses) {
-			if (!distinctCalled.contains(k)) {
-				distinctCalled.add(k);
+			// Remplis la liste distincte d'éléments distincts
+			for (String k : this.calledClasses) {
+				if (!distinctCalled.contains(k)) {
+					distinctCalled.add(k);
+				}
+			}
+
+			
+			for (String s : distinctCalled) {
+				System.out.println(s + ": " + Collections.frequency(calledClasses, s));
 			}
 		}
-		
-		System.out.println("\nClasses appelées: ");
-		for (String s : distinctCalled) {
-			System.out.println(s + ": " + Collections.frequency(calledClasses, s));
+		else {
+			System.out.println("Aucune classe appelée");
 		}
+
 	}
 }

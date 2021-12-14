@@ -1,0 +1,50 @@
+package logicProjet;
+
+import java.util.ArrayList;
+
+public class ReverseEngineering {
+	private ArrayList<String> inherited;
+	private ArrayList<String> associated;
+	
+	private boolean CalledParent;
+	private boolean CalledAssociation;
+	
+	public ReverseEngineering() {
+		this.inherited = new ArrayList<String>();
+		this.associated = new ArrayList<String>();
+		
+		this.CalledParent = false;
+		this.CalledAssociation = false;
+	}
+	
+	public void Add(String name) {
+		if(CalledParent) {
+			inherited.add(name);
+			CalledParent = false;
+		}
+		else if(CalledAssociation) {
+			associated.add(name);
+			CalledAssociation = false;
+		}
+	}
+	
+	public void CallParent() {
+		this.CalledParent = true;
+	}
+	
+	public void CallAssociation() {
+		this.CalledAssociation = true;
+	}
+	
+	public void Print() {
+		System.out.println("--La claase hérite de: ");
+		for(String s : inherited) {
+			System.out.println(s);
+		}
+		
+		System.out.println("\n--La classe est associée à: ");
+		for(String s : associated) {
+			System.out.println(s);
+		}
+	}
+}

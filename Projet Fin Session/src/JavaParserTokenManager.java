@@ -2,6 +2,10 @@
 import java.io.*;
 import logicProjet.*;
 import java.util.Stack;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.ArrayList;
 
 /** Token Manager. */
 public class JavaParserTokenManager implements JavaParserConstants

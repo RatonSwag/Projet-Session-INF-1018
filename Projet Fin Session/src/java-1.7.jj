@@ -50,6 +50,10 @@ PARSER_BEGIN(JavaParser)
 import java.io.*;
 import logicProjet.*;
 import java.util.Stack;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.ArrayList;
 
 public class JavaParser
 {
@@ -57,19 +61,25 @@ public class JavaParser
 
   //Déclaration stacks
   private Stack < ModifiersCounter > modCtrStack = new Stack < ModifiersCounter > ();
-  private Stack < CouplingCounter > ccStack = new Stack < CouplingCounter > ();
-  
-  //Test
-  private boolean variable=false;
-  private ModifiersCounter md=new ModifiersCounter() ;
-  //Test
-  
-  //Analyse de la visibilité entre classes d’un programme
-  private Visibility cl=new Visibility();
-  private boolean attribut=false;
-  private boolean getid=false;
-  //
 
+  private Stack < CouplingCounter > ccStack = new Stack < CouplingCounter > ();
+
+  private Stack < ReverseEngineering > reStack = new Stack < ReverseEngineering > ();
+
+  //Test
+  private boolean variable = false;
+
+  private ModifiersCounter md = new ModifiersCounter();
+
+  //Test
+  //Analyse de la visibilité entre classes d’un programme
+  private Visibility cl = new Visibility();
+
+  private boolean attribut = false;
+
+  private boolean getid = false;
+
+  //
   /**
      * Constructor for JavaParser.
      * @param fileName name of the file to parse
@@ -114,34 +124,70 @@ public class JavaParser
   {
     //FileExplorer ex = new FileExplorer();
     //ex.ExploreFiles();
-    
-	ModifiersCounter modCtr = new ModifiersCounter();
+    ModifiersCounter modCtr = new ModifiersCounter();
     JavaParser parser;
-    if (args.length == 0) {
+    if (args.length == 0)
+    {
+      System.out.println("Passez le chemin d'acc\u00e8s du fichier en argument");
+    }
+    else if (args.length >= 1)
+    {
+      FileExplorer ex = new FileExplorer(args);
+      List <Path> filePaths = ex.listFiles();
+      for (Path p : filePaths)
+      {
+        System.out.println(p.toString());
+        parser = new JavaParser(p.toString());
+        try
+        {
+          parser.CompilationUnit();
+          System.out.println("Java Parser Version 1.7:  Java program parsed successfully.");
+        }
+        catch (ParseException e)
+        {
+          System.out.println(e.getMessage());
+          System.out.println("Java Parser Version 1.7:  Encountered errors during parse.");
+        }
+      }
+    }
+    /***
+    if (args.length == 0)
+    {
       System.out.println("Java Parser Version 1.7:  Reading from standard input...");
       parser = new JavaParser(System.in);
-    } else if (args.length == 1) {
-      System.out.println("Java Parser Version 1.7:  Reading from file " + args[0] + "...");
-      try {
-        parser = new JavaParser(new java.io.FileInputStream(args[0]));
-      } catch (java.io.FileNotFoundException e) {
-        System.out.println("Java Parser Version 1.7:  File " + args[0] + " not found.");
+    }
+    else if (args.length == 1)
+    {
+      System.out.println("Java Parser Version 1.7:  Reading from file " + args [0] + "...");
+      try
+      {
+        parser = new JavaParser(new java.io.FileInputStream(args [0]));
+      }
+      catch (java.io.FileNotFoundException e)
+      {
+        System.out.println("Java Parser Version 1.7:  File " + args [0] + " not found.");
         return;
       }
-    } else {
+    }
+    else
+    {
       System.out.println("Java Parser Version 1.7:  Usage is one of:");
       System.out.println("         java JavaParser < inputfile");
       System.out.println("OR");
       System.out.println("         java JavaParser inputfile");
       return;
     }
-    try {
+    try
+    {
       parser.CompilationUnit();
       System.out.println("Java Parser Version 1.7:  Java program parsed successfully.");
-    } catch (ParseException e) {
+    }
+    catch (ParseException e)
+    {
       System.out.println(e.getMessage());
       System.out.println("Java Parser Version 1.7:  Encountered errors during parse.");
     }
+    ***/
   }
 }
 
@@ -536,7 +582,10 @@ void CompilationUnit() :
     (
       TypeDeclaration()
     )*
-    < EOF > {/*Analyse reference*/ System.out.println(cl.toString());} 
+    < EOF >
+    { /*Analyse reference*/
+      System.out.println(cl.toString());
+    }
   )
 }
 
@@ -650,9 +699,11 @@ void ClassOrInterfaceDeclaration() :
 {
   //Modification Modifier Counter
   //Modification Coupling Counter
+  //Modification Reverse Engineering
   {
     modCtrStack.push(new ModifiersCounter());
     ccStack.push(new CouplingCounter());
+    reStack.push(new ReverseEngineering());
   }
   (
     "class"
@@ -668,8 +719,10 @@ void ClassOrInterfaceDeclaration() :
   [ ImplementsList() ] 
   ClassOrInterfaceBody()
   //Modification Coupling Counter
+  //Modification Reverse Engineering
   {
     ccStack.pop().printCalled();
+    reStack.pop().Print();
   }
   /* danson, added this check for trailing semi-colon.  Apparently, this has been
       legal since the beginning of Java, some sort of a C hold-over.  Sun's latest
@@ -685,8 +738,16 @@ void ExtendsList() :
 {
 }
 {
+  //Modification Reverse Engineering
+  {
+    reStack.peek().CallParent();
+  }
   "extends" ClassOrInterfaceType()
   (
+    //Modification Reverse Engineering
+    {
+      reStack.peek().CallParent();
+    }
     "," ClassOrInterfaceType()
   )*
 }
@@ -835,8 +896,7 @@ void FieldDeclaration() :
 {
   (
     // Modifiers are already matched in the caller
-    
-	//Modification Modifiers Counter
+    //Modification Modifiers Counter
     //Modification Coupling Counter
     {
       modCtrStack.peek().AddModifier();
@@ -873,7 +933,7 @@ void VariableDeclaratorId() :
   variableName = < IDENTIFIER >
   {
     ccStack.peek().SetLastName(variableName.toString());
-  }  
+  }
   (
   "[" "]"
   )*
@@ -1002,18 +1062,36 @@ void Initializer() :
 
 void Type() :
 {
-  if (attribut=true) { getid=true; } 
+  if (attribut = true)
+  {
+    getid = true;
+  }
 }
 {
   (
     LOOKAHEAD(2)
     //Analyse increment reference number
-    ReferenceType() {if (attribut=true) { cl.augmentReference(); } }
-  |
-  	//Analyse increment reference number
-    PrimitiveType() {if (attribut=true) {cl.augmentTypesimple(); } }
+    ReferenceType()
+    {
+      if (attribut = true)
+      {
+        cl.augmentReference();
+      }
+    }
+  | 
+    //Analyse increment reference number
+    PrimitiveType()
+    {
+      if (attribut = true)
+      {
+        cl.augmentTypesimple();
+      }
+    }
   )
-  {attribut=false;getid=false;}
+  {
+    attribut = false;
+    getid = false;
+  }
 }
 
 void ReferenceType() :
@@ -1029,6 +1107,10 @@ void ReferenceType() :
     )+
   |
     (
+      //Modification Reverse Engineering
+      {
+        reStack.peek().CallAssociation(); 
+      }
       ClassOrInterfaceType()
     )
     (
@@ -1044,12 +1126,21 @@ void ClassOrInterfaceType() :
 }
 {
   (
-    t= < IDENTIFIER >
-    {String a=t.toString();
-      if(getid==true) { cl.ajouterClassRef(a); getid=false;} }
-      //Modification CouplingCounter
+    t = < IDENTIFIER >
+    {
+      String a = t.toString();
+      if (getid == true)
+      {
+        cl.ajouterClassRef(a);
+        getid = false;
+      }
+    }
+    //Modification CouplingCounter
+    //Modification Reverse Engineering
     {
       ccStack.peek().SetLastClass(t.toString());
+      //reStack.peek().CallAssociation();
+      reStack.peek().Add(t.toString());
     }
     [
       LOOKAHEAD(2)
@@ -1152,7 +1243,8 @@ void Name() :
   //Modification Coupling Counter
   calledName = < IDENTIFIER >
   {
-    if(ccStack.size() > 0) {
+    if (ccStack.size() > 0)
+    {
       ccStack.peek().AddCalled(calledName.toString());
     }
   }

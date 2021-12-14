@@ -1,0 +1,70 @@
+package logicProjet;
+
+import java.util.ArrayList;
+
+public class ReverseEngineering {
+	private ArrayList<String> inherited;
+	private ArrayList<String> associated;
+	
+	private boolean CalledParent;
+	private boolean CalledAssociation;
+	
+	public ReverseEngineering() {
+		this.inherited = new ArrayList<String>();
+		this.associated = new ArrayList<String>();
+		
+		this.CalledParent = false;
+		this.CalledAssociation = false;
+	}
+	
+	public void Add(String name) {
+		if(CalledParent) {
+			inherited.add(name);
+			CalledParent = false;
+			CalledAssociation = false;
+		}
+		else if(CalledAssociation) {
+			boolean isAssociated = false;
+			//Fais le tour de la liste pour vérifier si la nom est déja dedans
+			for(String s : associated) {
+				if(s.equals(name)) {
+					isAssociated = true;
+					break;
+				}
+			}
+			
+			//if(!isAssociated) {
+				associated.add(name);
+			//}
+				CalledParent = false;
+			CalledAssociation = false;
+		}
+	}
+	
+	public void CallParent() {
+		this.CalledParent = true;
+	}
+	
+	public void CallAssociation() {
+		System.out.println("Calling Assoc");
+		this.CalledAssociation = true;
+	}
+	
+	public void Print() {
+		System.out.println("--La classe hérite de: ");
+		if(inherited.size() == 0) {
+			System.out.println("La classe n'hérite d'aucune classe ou interface");
+		}
+		for(String s : inherited) {
+			System.out.println(s);
+		}
+		
+		System.out.println("\n--La classe est associée à: ");
+		if(associated.size() == 0) {
+			System.out.println("La classe n'est associée à aucune autre classe");
+		}
+		for(String s : associated) {
+			System.out.println(s);
+		}
+	}
+}
