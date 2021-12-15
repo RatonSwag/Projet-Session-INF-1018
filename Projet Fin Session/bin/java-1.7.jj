@@ -73,6 +73,7 @@ public class JavaParser
 
   //Test
   //Analyse de la visibilité entre classes d’un programme
+<<<<<<< Updated upstream
   private Visibility cl = new Visibility();
 
   private boolean attribut = false;
@@ -80,6 +81,21 @@ public class JavaParser
   private boolean getid = false;
 
   //
+=======
+  private Stack < Visibility > clStack=new Stack < Visibility > ();
+  private boolean attribut=false;
+  private boolean getid=false;
+  //
+
+  //Class declare
+  private Stack < AppelsMethodes > amStack=new Stack < AppelsMethodes >();
+  private boolean reference=false;
+  private boolean variableMethode=false;
+  private String className;
+  private String classVariable;
+  private String methodeName;
+  
+>>>>>>> Stashed changes
   /**
      * Constructor for JavaParser.
      * @param fileName name of the file to parse
@@ -582,10 +598,14 @@ void CompilationUnit() :
     (
       TypeDeclaration()
     )*
+<<<<<<< Updated upstream
     < EOF >
     { /*Analyse reference*/
       System.out.println(cl.toString());
     }
+=======
+    < EOF > 
+>>>>>>> Stashed changes
   )
 }
 
@@ -703,7 +723,14 @@ void ClassOrInterfaceDeclaration() :
   {
     modCtrStack.push(new ModifiersCounter());
     ccStack.push(new CouplingCounter());
+<<<<<<< Updated upstream
     reStack.push(new ReverseEngineering());
+=======
+
+    //a tester
+    clStack.push(new Visibility());
+    amStack.push(new AppelsMethodes());
+>>>>>>> Stashed changes
   }
   (
     "class"
@@ -713,6 +740,7 @@ void ClassOrInterfaceDeclaration() :
   className = < IDENTIFIER >
   {
     modCtrStack.peek().SetName(className.toString());
+    amStack.peek().setClassName(className.toString());
   }
   [ TypeParameters() ] 
   [ ExtendsList() ] 
@@ -852,6 +880,9 @@ void ClassOrInterfaceBody() :
   //Modification ModifiersCounter
   {
     modCtrStack.pop().ToString();
+
+    System.out.println(clStack.pop().toString());
+    System.out.println(amStack.pop().toString());
   }
 }
 
@@ -878,7 +909,7 @@ void ClassOrInterfaceBodyDeclaration() :
       LOOKAHEAD(Type() < IDENTIFIER > ("[" "]")* (","
     | "="
     | ";"))
-      FieldDeclaration()
+      { attribut=true;} FieldDeclaration()
     | 
       LOOKAHEAD(2)
       AnnotationTypeDeclaration()
@@ -907,7 +938,7 @@ void FieldDeclaration() :
       "," VariableDeclarator()
     )*
     ";"
-  )
+  ) { getid=false; className=null;classVariable=null; reference=false; variableMethode=false;}
 }
 
 void VariableDeclarator() :
@@ -920,6 +951,7 @@ void VariableDeclarator() :
     {
       ccStack.peek().AssignNameToClass();
       ccStack.peek().Uncall();
+       if(reference==true) {amStack.peek().addListClass(className,classVariable); }
     }
   )
 }
@@ -933,7 +965,12 @@ void VariableDeclaratorId() :
   variableName = < IDENTIFIER >
   {
     ccStack.peek().SetLastName(variableName.toString());
+<<<<<<< Updated upstream
   }
+=======
+    if(reference==true) { classVariable=variableName.toString();}
+  }  
+>>>>>>> Stashed changes
   (
   "[" "]"
   )*
@@ -976,16 +1013,18 @@ void MethodDeclaration() :
       Block()
     | ";"
     )
-  )
+  ) { amStack.peek().setString();}
 }
 
 void MethodDeclarator() :
 {
+  Token t;
 }
 {
   (
-    < IDENTIFIER > FormalParameters() ("[" "]")*
+    t=< IDENTIFIER > { amStack.peek().setMethodeName(t.toString());}FormalParameters() ("[" "]")*
   )
+  
 }
 
 void FormalParameters() :
@@ -1062,15 +1101,20 @@ void Initializer() :
 
 void Type() :
 {
+<<<<<<< Updated upstream
   if (attribut = true)
   {
     getid = true;
   }
+=======
+  if (attribut==true) { getid=true; } 
+>>>>>>> Stashed changes
 }
 {
   (
     LOOKAHEAD(2)
     //Analyse increment reference number
+<<<<<<< Updated upstream
     ReferenceType()
     {
       if (attribut = true)
@@ -1087,6 +1131,12 @@ void Type() :
         cl.augmentTypesimple();
       }
     }
+=======
+    ReferenceType() {if (attribut==true) { clStack.peek().augmentReference(); } }
+  |
+  	//Analyse increment reference number
+    PrimitiveType() {if (attribut==true) {clStack.peek().augmentTypesimple(); } }
+>>>>>>> Stashed changes
   )
   {
     attribut = false;
@@ -1096,6 +1146,7 @@ void Type() :
 
 void ReferenceType() :
 {
+  reference=true;
 }
 {
   (
@@ -1126,6 +1177,7 @@ void ClassOrInterfaceType() :
 }
 {
   (
+<<<<<<< Updated upstream
     t = < IDENTIFIER >
     {
       String a = t.toString();
@@ -1137,10 +1189,21 @@ void ClassOrInterfaceType() :
     }
     //Modification CouplingCounter
     //Modification Reverse Engineering
+=======
+    t= < IDENTIFIER >
+>>>>>>> Stashed changes
     {
+      
+      //Modification CouplingCounter
       ccStack.peek().SetLastClass(t.toString());
+<<<<<<< Updated upstream
       //reStack.peek().CallAssociation();
       reStack.peek().Add(t.toString());
+=======
+	// Visibility 
+      if(getid==true) { clStack.peek().ajouterClassRef(t.toString()); className=t.toString(); getid=false;}
+      if(variableMethode==true) { className=t.toString(); }
+>>>>>>> Stashed changes
     }
     [
       LOOKAHEAD(2)
@@ -1237,7 +1300,8 @@ void Name() :
  * by a ".*" when used in the context of an "ImportDeclaration".
  */
 {
-  Token calledName;
+  Token calledName=null;
+  Token methodeName=null;
 }
 {
   //Modification Coupling Counter
@@ -1250,8 +1314,12 @@ void Name() :
   }
   (
     LOOKAHEAD(2)
-    "." < IDENTIFIER >
+    "." methodeName=< IDENTIFIER >
   )*
+  {
+    if((variableMethode==true)& (methodeName!=null)&(calledName!=null)) { amStack.peek().addList(calledName.toString(),methodeName.toString()); }
+    variableMethode=false;
+  }
 }
 
 void NameList() :
@@ -1589,7 +1657,7 @@ void PrimaryPrefix() :
   LOOKAHEAD(ResultType() "." "class")
   ResultType() "." "class"
 | 
-  Name()
+  {variableMethode=true;}Name()
 }
 
 void PrimarySuffix() :
@@ -1783,6 +1851,7 @@ void BlockStatement() :
 
 void LocalVariableDeclaration() :
 {
+  variableMethode=true;
 }
 {
   // old -- [ "final" ] Type() VariableDeclarator() ( "," VariableDeclarator() )*
